@@ -19,7 +19,7 @@
 #include<sstream>
 #include<fstream>
 
-#define CIRCLE_RADIUS  0.15f
+
 #define PI 3.14159265358979323846
 #define GL_SILENCE_DEPRECATION
 
@@ -75,7 +75,7 @@ bool shieldActive = false;
 bool goldenEggActive = false;
 bool ClockActive = false;
 
-int Duration = 5000; // Duration of golden egg effect in milliseconds (5 seconds)
+int Duration = 10000; // Duration of golden egg effect in milliseconds (10 seconds)
 
 int ShieldTimer = 0; // Timer to track the duration of the shield effect
 int goldenEggTimer = 0; // Timer to track the duration of the golden egg effect
@@ -106,7 +106,7 @@ void renderBitmapString(float x, float y, float z, void *font, char *string) {
     }
 }
 
-void renderBitmapString(float x, float y, void *font, const std::string &string) {
+void renderBitmapString(float x, float y, void *font, const string &string) {
     glRasterPos2f(x, y);
     for (char c : string) {
         glutBitmapCharacter(font, c);
@@ -158,10 +158,24 @@ enum GameState {
     GAME_MENU,
     INSTRUCTION,
     PAUSED,
-    GAMEOVER
+    GAMEOVER,
+    NAME_ID
 };
 
-GameState gameState = HOME_MENU;
+GameState gameState = NAME_ID;
+
+void drawNAME_ID()
+{
+    glColor3f(0.0, 0.0, 0.0);
+    renderBitmapString(-0.50f, 0.50f, 0.0f, GLUT_BITMAP_HELVETICA_18, "MARIA NAWAR          21-45395-3");
+    renderBitmapString(-0.50f, 0.40f, 0.0f, GLUT_BITMAP_HELVETICA_18, "MD. AKIB SHAHRIER    21-45428-3");
+    renderBitmapString(-0.50f, 0.30f, 0.0f, GLUT_BITMAP_HELVETICA_18,  "HASIN ANJUM          21-45430-3");
+    renderBitmapString(-0.50f, 0.20f, 0.0f, GLUT_BITMAP_HELVETICA_18,  "TANJIB UL ISLAM      21-45393-3");
+    renderBitmapString(-0.50f, 0.10f, 0.0f, GLUT_BITMAP_HELVETICA_18,  "SAKIB HOSSAIN        21-45388-3");
+    renderBitmapString(-0.50f, 0.0f, 0.0f, GLUT_BITMAP_HELVETICA_18,  "SUBRINA ISLAM PRITY  21-45813-3");
+    
+    renderBitmapString(-0.26f, -0.20f, 0.0f, GLUT_BITMAP_TIMES_ROMAN_24, "Press 'C' to CONTINUE");
+}
 
 void drawHomeMenu()
 {
@@ -174,11 +188,21 @@ void drawHomeMenu()
 void drawGameMenu()
 {
     glColor3f(0.0, 0.0, 0.0);
-    renderBitmapString(-0.20f, 0.30f, 0.0f, GLUT_BITMAP_HELVETICA_18, "GAME MENU");
+    //renderBitmapString(-0.20f, 0.30f, 0.0f, GLUT_BITMAP_HELVETICA_18, "GAME MENU");
     renderBitmapString(-0.27f, 0.20f, 0.0f, GLUT_BITMAP_TIMES_ROMAN_24, "Press 'P' to PAUSE");
     
     glColor3f(0.4, 0.2, 0.0);
     renderBitmapString(-0.20f, 0.10F, 0.0f, GLUT_BITMAP_TIMES_ROMAN_24, "Press 'Q' to QUIT");
+    
+    
+    if(ClockActive)
+    {
+        timer=ClockTimer;
+        TimerCount();
+        
+        glColor3f(1.0, 0.2, 0.0);
+        renderBitmapString(0.10f, -0.10f, 0.0f, GLUT_BITMAP_HELVETICA_18, "Speed Up");
+    }
     
     if(shieldActive)
     {
@@ -193,15 +217,6 @@ void drawGameMenu()
         
         glColor3f(1.0, 0.2, 0.0);
         renderBitmapString(0.10f, 0.0f, 0.0f, GLUT_BITMAP_HELVETICA_18, "2X SCORE");
-        
-    }
-    if(ClockActive)
-    {
-        timer=ClockTimer;
-        TimerCount();
-        
-        glColor3f(1.0, 0.2, 0.0);
-        renderBitmapString(0.10f, 0.0f, 0.0f, GLUT_BITMAP_HELVETICA_18, "Speed Up");
         
     }
 
@@ -482,7 +497,7 @@ void drawBasket()
 
 }
 
-void shieldImpact()
+void Impact()
 {
     if (shieldActive||goldenEggActive)
     {
@@ -678,21 +693,25 @@ void update(int value)
         {
             if((Bx+Bradius)>Sx && (Bx-Bradius)<Sx)
             {
+                if(ClockActive)
+                {
+                    ClockActive=false;
+                }
                 if(!goldenEggActive)
                 {
                     shieldActive=true;
                     ShieldTimer = Duration;
-                    
-                    Ey=dropY;
-                    Oy=dropY;
-                    Hy=dropY;
-                    Sy=dropY;
-                    Gy=dropY;
-                    Cy=dropY;
-                    
-                    item();
-                    itemFall();
                 }
+                
+                Ey=dropY;
+                Oy=dropY;
+                Hy=dropY;
+                Sy=dropY;
+                Gy=dropY;
+                Cy=dropY;
+                
+                item();
+                itemFall();
             }
         }
         
@@ -700,9 +719,10 @@ void update(int value)
         {
             if((Bx+Bradius)>Gx && (Bx-Bradius)<Gx)
             {
-                if(shieldActive)
+                if(shieldActive||ClockActive)
                 {
                     shieldActive=false;
+                    ClockActive=false;
                 }
                 goldenEggActive = true; // Set golden egg caught state
                 goldenEggTimer = Duration; // Start the timer for golden egg effect
@@ -724,17 +744,16 @@ void update(int value)
         {
             if((Bx+Bradius)>Cx && (Bx-Bradius)<Cx)
             {
-                if(!goldenEggActive)
+                if(shieldActive||goldenEggActive)
                 {
-                    Speed=level3;
+                    shieldActive=false;
                 }
                 else
                 {
+                    ClockActive=true;
+                    ClockTimer = Duration;
                     Speed=Speed+0.02f;
                 }
-                ClockActive=true;
-                ClockTimer = Duration;
-                    
                 Ey=dropY;
                 Oy=dropY;
                 Hy=dropY;
@@ -868,6 +887,21 @@ void handleKeypress(unsigned char key, int x, int y)
 {
     switch (key)
     {
+        case 'C':
+        case 'c':
+            if(gameState == HOME_MENU)
+            {
+                gameState = NAME_ID;
+                flag=0;
+                break;
+            }
+            if(gameState == NAME_ID)
+            {
+                gameState = HOME_MENU;
+                flag=0;
+            }
+            break;
+            
         case 'P':
         case 'p':
             if (gameState == GAME_MENU) {
@@ -908,7 +942,7 @@ void handleKeypress(unsigned char key, int x, int y)
         case 'm':
             if (gameState == GAMEOVER) {
                 gameState = HOME_MENU;
-                glutPostRedisplay();
+                
                 flag=0;
                 
                 score=0;
@@ -925,9 +959,11 @@ void handleKeypress(unsigned char key, int x, int y)
                 Oy=dropY;
                 Hy=dropY;
                 Sy=dropY;
+                Cy=dropY;
                 Bx = column2;
                 shieldActive=false;
                 goldenEggActive=false;
+                ClockActive=false;
             }
             break;
             
@@ -985,20 +1021,21 @@ void drawLines()
     renderBitmapString(0.7f, 0.3f, GLUT_BITMAP_TIMES_ROMAN_24, GStr);
     
     string CStr = "CLOCK: " + to_string(totalClock);
-    renderBitmapString(0.7f, 0.3f, GLUT_BITMAP_TIMES_ROMAN_24, CStr);
+    renderBitmapString(0.7f, 0.2f, GLUT_BITMAP_TIMES_ROMAN_24, CStr);
     
 }
 
 void drawScore()
 {
-    
     glColor3f (0.0,0.0,0.0);
     string scoreStr = "Score: " + to_string(score);
     renderBitmapString(0.7f, 0.9f, GLUT_BITMAP_TIMES_ROMAN_24, scoreStr);
-    
-    string highscoreStr = "High Score: " + to_string(highscore);
-    renderBitmapString(-0.5f, 0.0f, GLUT_BITMAP_TIMES_ROMAN_24, highscoreStr);
-    
+    if(gameState!=GAME_MENU)
+    {
+        renderBitmapString(-0.5f, 0.1f, GLUT_BITMAP_TIMES_ROMAN_24, scoreStr);
+        string highscoreStr = "High Score: " + to_string(highscore);
+        renderBitmapString(-0.5f, 0.0f, GLUT_BITMAP_TIMES_ROMAN_24, highscoreStr);
+    }
 }
 
 void Constant()
@@ -1026,10 +1063,15 @@ void display()
     
     switch (gameState)
     {
-        case HOME_MENU:
+        case NAME_ID:
+            drawNAME_ID();
+            break;
             
+        case HOME_MENU:
             drawBanner();
             drawPlay();
+            
+            drawHomeMenu();
             glLoadIdentity(); // Reset the transformation matrix
             glTranslatef(0.55f, -0.50f, 0.0f);
             glScalef(1.1, 0.75, 0.0);
@@ -1041,7 +1083,6 @@ void display()
             Hen();
             chicken();
             glLoadIdentity();
-            drawHomeMenu();
             break;
             
         case INSTRUCTION:
@@ -1058,13 +1099,15 @@ void display()
             drawField();
             glLoadIdentity();
             LevelSpeed();
-            drawLines();
+            //drawLines();
+            drawGameMenu();
+            
             drawEgg();
             drawBomb();
             drawShield();
             drawGoldenEgg();
             drawClock();
-            
+        
             drawHeart();
             drawHeartDrop();
             
@@ -1083,8 +1126,7 @@ void display()
             glLoadIdentity();
             
             drawBasket();
-            shieldImpact();
-            drawGameMenu();
+            Impact();
             drawScore();
             if(totalH==0)
             {
@@ -1094,7 +1136,6 @@ void display()
             
         case PAUSED:
             drawBanner();
-            drawPlay();
             drawPaused();
             break;
             
@@ -1705,7 +1746,7 @@ void chicken()
     glVertex2f(0.315f, -0.236f);
     glEnd();
     glBegin(GL_LINE_STRIP);
-
+    
     glVertex2f(0.288f, -0.311f);
     glVertex2f(0.290f, -0.291f);
     glVertex2f(0.288f, -0.279f);
